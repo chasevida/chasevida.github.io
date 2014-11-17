@@ -498,6 +498,7 @@ pre {
   -webkit-transition-delay: 0.1s;
   transition-delay: 0.1s;
   overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
 }
 .page .content {
   height: 100%;
