@@ -15,10 +15,10 @@
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
       m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
       })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-      
+
       ga('create', 'UA-57712106-1', 'auto');
       ga('send', 'pageview');
-          
+
     </script>
   </head>
   <body>
@@ -89,7 +89,7 @@ $ ls
 <pre><code>$ sudo vim forge-silverstripe.local
 </code></pre><p>With this open you will see the default Homestead Nginx configuration. There’s a lot in here which we won’t cover, for now all we’re interested in are the changes we need to make in order to secure our application and create pretty urls. Since this is our local version we will end up making the same changes when deploying to production via Forge so it’s a good idea to save these configuration settings somewhere to be used again later. For my part I’m going to simply commit a <code>nginx.conf</code> file in the root of my project.</p>
 <p>At the top of the file you will notice a few properties that will be unique to your setup. The <code>server_name</code> and <code>root</code> will depend on what you’ve named your website and where files are located on your machine. Keep these as they are, the rest of the file is what we will be altering.</p>
-<p>Going through this we firstly we need to alter the <code>index</code> references, we don’t want to use SilverStripes default <code>index.php</code> but rather the <code>framework/main.php</code> file. So remove all the references to index here and replace the line with the following.</p>
+<p>Going through this we firstly need to alter the <code>index</code> references, we don’t want to use SilverStripes default <code>index.php</code> but rather the <code>framework/main.php</code> file. So remove all the references to index here and replace the line with the following.</p>
 <pre><code>index framework/main.php;
 </code></pre><p>We need to do the same for the default location. Replace the index reference here with <code>framework/main.php</code> again. It should look like the following.</p>
 <pre><code>location / {
