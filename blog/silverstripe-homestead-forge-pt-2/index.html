@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html ng-app="mainApp" class="no-js">
+  <head>
+    <meta charset="utf8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="webby dev sort of blog">
+    <meta name="author" content="Mark">
+    <title>chasevida</title>
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Josefin+Sans:700|GFS+Didot&amp;subset=greek">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="shortcut icon" href="/favicon.ico?v=242738432">
+  </head>
+  <body>
+    <div class="u-fill u-no-overflow">
+      <div push-nav class="nav u-fill is-hidden">
+        <div push-nav="close" class="background"></div>
+        <ul class="nav-list l-vert-center">
+          <li><a href="/"><span>Home</span></a></li>
+          <li><a href="/self"><span>Me</span></a></li>
+          <li><a href="/with-n-for"><span>With & For</span></a></li>
+          <li><a href="/blog"><span>Blog</span></a></li>
+        </ul>
+      </div>
+      <button type="button" push-nav="toggle" class="btn btn-menu"><span class="lines"></span></button>
+      <div push-nav class="page blog">
+        <div du-scroll-container class="page-inner">
+          <div class="content">
+            <div class="blog-post">
+              <h1 class="title">SilverStripe, Homestead &amp; Forge 2/3</h1>
+              <div class="single"><p>After installing and configuring SilverStripe in my <a href="/blog/silverstripe-homestead-forge-pt-1">first article</a> we’ll move onto setting up our local development environment using <a href="http://laravel.com/docs/4.2/homestead">Homestead</a>, a Vagrant Virtual Machine set-up by Taylor Otwell the creator of <a href="http://laravel.com/">Laravel</a> and <a href="forge.laravel.com">Forge</a>.</p>
+<p>The benefit of using this particular VM is that it is the same one that will be provisioned by Forge so we can ensure we have the same development environment as that of our production server.</p>
+<p>Getting started with Forge is quite straightfoward and the php framework Laravel has great <a href="http://laravel.com/docs/4.2/homestead">documentation </a> that gives a thorough overview of using Homestead. Better yet, <a href="https://laracasts.com/">Laracasts</a> has a fantastic <a href="https://laracasts.com/lessons/say-hello-to-laravel-homestead-two">screencast</a> which will walk you through installing Vagrant, Virtual Box and Homestead. I highly recommend you start with these as I wont be going over their installation steps.</p>
+<p>After you’ve gone through the installation process you should be able to run the command <code>$ homestead</code> from anywhere in the terminal to see a list of help commands. But before we run Homestead it will need to know a few things, like which sites we intend to develop and what domains they will use. To tell Homestead about these it has a helpful <code>yaml</code> configuration file. To open this run the following commands:</p>
+<pre><code>$ homestead init
+$ homestead edit
+</code></pre><p>The first command initialises Homestead if not already installed and the second opens the VM’s configuration files (specifically Homestead.yaml) in your predefined editor. If you’ve followed the recommended <a href="https://laracasts.com/lessons/say-hello-to-laravel-homestead-two">Laracast tutorial</a> you’ll know what we’re looking at. Lets add the below configuration:</p>
+<pre><code>sites:
+    map: forge-silverstripe.local
+    to: home/vagrant/Sites/forge-sivlerstripe
+
+databases:
+    forgesilverstripe
+
+variables:
+    - key: APP_ENV
+    value: local
+    - key: DB_SERVER
+    value: localhost
+    - key: DB_USERNAME
+    value: homestead
+    - key: DB_PASSWORD
+    value: secret
+    - key: ADMIN_USERNAME
+    value: admin
+    - key: ADMIN_PASSWORD
+    value: ohsosecret
+</code></pre><p>Firstly we are mapping out the correct local development folder to the domain we intend to use for development purposes. In the Laravel Homestead documentation they use the extension <code>.app</code> but that’s now a valid extension so I’m using ‘.local’ to keep it clean and obvious. </p>
+<p>Next we define a database named <code>forgesilverstripe</code>, simple enough.</p>
+<p>Finally we set our environment variables. These will be available for every project that runs via Homestead. Here we map our required keys to use the default values that Homestead comes with. This is what <code>_ss_environment.php</code> will use when setting it’s configuration.</p>
+<p>Before we continue we now need to let our local system know about the new <code>host</code> (<code>forge-silverstripe.local</code>) request we will be making otherwise we won’t see anything when we try hit our development domain. To add this to our <code>hosts</code> file we will use the Vim editor that comes with iTerm2. Run following command:</p>
+<pre><code>$ sudo vim /etc/hosts
+</code></pre><p>This will ask for your system administrator password before opening up your <code>hosts</code> file in Vim. Once it’s opened add the following to the bottom of the file which points the VM IP address to our human readable domain.</p>
+<pre><code>192.168.10.10   forge-silverstripe.local
+</code></pre><p><em>If you haven’t used Vim before you can navigate with the arrow keys, then press <code>i</code> to enter <code>insert</code> mode and begin editing the file. Once you’ve added in your text press <code>esc</code> to exit <code>insert</code> mode. Now type <code>:w</code> to <code>write</code> (save) your changes. Finally type <code>:exit</code> to close Vim. For more take a look at <a href="http://www.openvim.com/">openvim.com</a>.</em></p>
+<p>We’re now ready to launch our Homestead Vagrant box. From anywhere in the terminal we can finally run the following command:</p>
+<pre><code>$ homestead up
+</code></pre><p>Homestead wraps parts of the Vagrant api so it allows you to run the <code>up</code> command the same as you would directly from Vagrant. Once Vagrant has provisioned the environment you can navigate to the url you set up earlier, for us it’s <code>http://forge-silverstripe.local</code>. You should now see your fresh install of SilverStripe with the default theme.</p>
+<h2 id="moving-from-apache-to-nginx">Moving from Apache to Nginx</h2>
+<p>You may have noticed if you’ve hit some of the navigation links or tried to login to the admin panel that the url is not updating as you’d normally expect. That is the ‘mod_rewrite’ rules are not being applied and there is a prefix of <code>/index.php/</code> before each subsequent link. This is because we are not using Apache but instead Nginx (pronounced ‘engine-x’) which does not implement the default <code>.htaccess</code> files that comes with SilverStripe. However, Nginx has it’s own configuration file that allows us to implement the same behaviour as well as other important security protocols which we’ll do in this article.</p>
+<p><em>Admittedly I’m not an expert in either Apache or Nginx but I know enough to get around or perhaps just enough to be dangerous, so please ensure that you read through the appropriate documentation to ensure your implementation is robust and secure.</em></p>
+<p>For us we will need to tweak the <code>nginx.conf</code> file that contains the default setup for the Laravel framework. To do this we need to get back into the terminal and ssh into our Virtual Machine. Homestead makes this really simple, just run the following command:</p>
+<pre><code>$ homestead ssh
+</code></pre><p><em>If you’re having trouble with <code>ssh</code> ensure you’ve set up an appropriate access key and refer back to the documentation, the <a href="https://laracasts.com/lessons/say-hello-to-laravel-homestead-two">Laracast tutorial</a> is good for this.</em></p>
+<p>Once you’ve connected to the VM we need to edit the servers <code>nginx.conf</code> file. Run the following commands:</p>
+<pre><code>$ cd /etc/nginx/sites-available
+$ ls
+</code></pre><p>This will change directory to where Nginx stores it’s configuration files. The second command will list the files found in this directory which should match all the sites you have set-up to run via Homestead. We are going to open the configuration file specific to our project, for me it’s called <code>forge-silverstripe.local</code>, named the same as our domain. To open this in Vim run the following command.</p>
+<pre><code>$ sudo vim forge-silverstripe.local
+</code></pre><p>With this open you will see the default Homestead Nginx configuration. There’s a lot in here which we won’t cover, for now all we’re interested in are the changes we need to make in order to secure our application and create pretty urls. Since this is our local version we will end up making the same changes when deploying to production via Forge so it’s a good idea to save these configuration settings somewhere to be used again later. For my part I’m going to simply commit a <code>nginx.conf</code> file in the root of my project.</p>
+<p>At the top of the file you will notice a few properties that will be unique to your setup. The <code>server_name</code> and <code>root</code> will depend on what you’ve named your website and where files are located on your machine. Keep these as they are, the rest of the file is what we will be altering.</p>
+<p>Going through this we firstly we need to alter the <code>index</code> references, we don’t want to use SilverStripes default <code>index.php</code> but rather the <code>framework/main.php</code> file. So remove all the references to index here and replace the line with the following.</p>
+<pre><code>index framework/main.php;
+</code></pre><p>We need to do the same for the default location. Replace the index reference here with <code>framework/main.php</code> again. It should look like the following.</p>
+<pre><code>location / {
+    try_files $uri $uri/ /framework/main.php?$query_string;
+}
+</code></pre><p>You can then update the error pages but I’m going to skip that for now and move onto editing the assets which should look like something like the below.</p>
+<pre><code>location ^~ /assets/ {
+    sendfile on;
+    try_files $uri = 404;
+}
+</code></pre><p>Next we again need to replace the reference to the default <code>index.php</code> but this time allow a few additional options. </p>
+<pre><code>location ~ /framework/.*(main|rpc|tiny_mce_gzip)\.php$ {
+    …
+}
+</code></pre><p>Ok, that will get the majority of our pretty urls behaving correctly but more importantly we need to address some security concerns, namely that we are leaving a lot of our executable files exposed for direct access. To protect these we are going to add a series of denials and in some cases a 404 so as to hide certain aspects of our setup from potential attack vectors.</p>
+<p>However, if we lock this down too tightly the SilverStripe CMS will not be able to make the required ajax calls and you’ll quickly discover your administration panel breaking down.</p>
+<p>So with that in mind we add the below rules.</p>
+<pre><code>location ~ /vendor/(.+)$ {
+    deny all;
+}
+
+location ~ /framework/sake$ {
+    deny all;
+    return 404;
+}
+
+location ~ /(cms|framework|mysite)/(.+).(php|php3|php4|php5|phtml|inc|rb|config|json|md)$ {
+    deny all;
+}
+
+location ^~ /silverstripe-cache {
+    deny all;
+}
+
+location ~* /(cms|framework)/silverstripe_version$ {
+    deny all;
+}
+
+location ~* \.(ya?ml|yml)$ {
+    deny all;
+    return 404;
+}
+
+location ~* web\.config {
+    deny all;
+    return 404;
+}
+
+location ~* nginx\.conf {
+    deny all;
+    return 404;
+}
+
+location ~* composer\.(json|lock) {
+    deny all;
+    return 404;
+}
+
+location ~ /\. {
+    deny all;
+}
+</code></pre><p>The complete configuration should now look something like this:</p>
+<pre><code>server {
+
+    listen 80;
+    server_name forge-silverstripe.local;
+    root /home/vagrant/Sites/forge-silverstripe;
+
+    index framework/main.php;
+
+    charset utf-8;
+
+    location / {
+        try_files $uri $uri/ /framework/main.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    access_log off;
+    error_log  /var/log/nginx/forge-silverstripe.local-error.log error;
+
+    error_page 404 /framework/main.php;
+
+    sendfile off;
+
+    location ^~ /assets/ {
+        sendfile on;
+        try_files $uri = 404;
+    }
+
+    location ~ /framework/.*(main|rpc|tiny_mce_gzip)\.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass unix:/var/run/php5-fpm.sock;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_intercept_errors on;
+        fastcgi_buffer_size 16k;
+        fastcgi_buffers 4 16k;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    location ~ /vendor/(.+)$ {
+        deny all;
+    }
+
+    location ~ /framework/sake$ {
+        deny all;
+    }
+
+    location ~ /(cms|framework|mysite)/(.+).(php|php3|php4|php5|phtml|inc|rb|config|json|md)$ {
+        deny all;
+    }
+
+    location ^~ /silverstripe-cache {
+        deny all;
+    }
+
+    location ~* \.(ya?ml)$ {
+        deny all;
+        return 404;
+    }
+
+    location ~* web\.config {
+        deny all;
+        return 404;
+    }
+
+    location ~* nginx\.conf {
+        deny all;
+        return 404;
+    }
+
+    location ~* composer\.(json|lock) {
+        deny all;
+        return 404;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+
+}
+</code></pre><p>Save the changes and exit out of Vim. </p>
+<p><em>As a quick reminder to edit a file press <code>i</code> to enter insert mode. Pressing the <code>esc</code> key will exit insert mode. To save your changes exit insert mode and type <code>:w</code> and finally exit Vim by typing <code>:exit</code>.</em></p>
+<p>Ok so we went through this the slightly longer way as I wanted to go over the changes required. What we can also do is create a file <code>nginx.conf</code> and commit this to the root of our project with all the above settings. Instead of manually typing these changes up we could copy and replace the default nginx setup for our site using the below commands.</p>
+<pre><code>$ sudo cp nginx.conf /etc/nginx/sites-available/forge-silverstripe.local
+</code></pre><p>Make sure you’re in your project root directory otherwise ensure the path to your <code>nginx.conf</code> precedes the filename.</p>
+<h2 id="reload-restart-nginx">Reload &amp; Restart Nginx</h2>
+<p>We now have an updated configuration for SilverStripe and Nginx that works but this wont change a thing until we reload and restart the server. From back in your terminal (still connected via ssh) run the following two commands.</p>
+<pre><code>$ sudo service nginx reload
+$ sudo service nginx restart
+</code></pre><p>You may find that if you if you don’t do this with <code>sudo</code> that the command does not execute. Also you might see a <code>[ fail ]</code> on the right side of terminal if there were errors in the configuration file. If this is the case open your configuration file and check for any syntax or spelling errors and reload/restart Nginx again.</p>
+<p>If this has all worked without errors you should be able to refresh your site in the browser and see your pretty urls are back as expected. You should now also not be able to access any sensitive files, I’d recommend running some tests to ensure this is the case.</p>
+<h2 id="using-the-sake-cli">Using the Sake CLI</h2>
+<p>Working with SilverStripe you will find yourself using <code>dev/build</code> and <code>flush=1</code> often either via the browser or command line. To do this with Homestead we will need to ensure we have ssh’d into the VM. Once inside we need to move to our project directory and set-up a few temp variables to enable the use of  SilverStripes <code>sake</code> cli. Run the following commands:</p>
+<pre><code>$ cd Sites/forge-silverstripe
+
+$ export DB_USERNAME=homestead
+$ export DB_PASSWORD=secret
+$ export APP_ENV=local
+
+$ sudo ./framework/sake installsake
+</code></pre><p>Firstly we change to the root directory of our project. From here we set up some temp variables in order to execute commands successfully from the terminal. Here we again configure the database username and password as well as the development environment key. Once these are set we can install the <code>sake</code> cli with the last command. If this has all worked correctly you can now re-build the database and flush the cache from the command line like so.</p>
+<pre><code>$ sake dev/build
+$ sake / flush=all
+</code></pre><p>Why not just use the browser? Well we are planning on automating a few things when we deploy to staging and production so we will eventually be running these commands via a post-install bash script which is essentially the same thing as what we’re doing here. Plus this also means we can now run our <a href="http://doc.silverstripe.org/framework/en/topics/testing/">phpunit tests</a> from the command line, a nice bonus.</p>
+<h2 id="end">End</h2>
+<p>Now that we have our local setup running we can confidently deploy our site to a <a href="https://www.digitalocean.com/?refcode=f97aaa23def8">DigitalOcean</a> droplet/instance using <a href="forge.laravel.com">Forge</a> which we will do in my next article coming soon.</p>
+
+              </div>
+            </div>
+            <div class="blog-footer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/js/libs.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

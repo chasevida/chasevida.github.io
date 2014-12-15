@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html ng-app="mainApp" class="no-js">
+  <head>
+    <meta charset="utf8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="webby dev sort of blog">
+    <meta name="author" content="Mark">
+    <title>chasevida</title>
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Josefin+Sans:700|GFS+Didot&amp;subset=greek">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="shortcut icon" href="/favicon.ico?v=242738432">
+  </head>
+  <body>
+    <div class="u-fill u-no-overflow">
+      <div push-nav class="nav u-fill is-hidden">
+        <div push-nav="close" class="background"></div>
+        <ul class="nav-list l-vert-center">
+          <li><a href="/"><span>Home</span></a></li>
+          <li><a href="/self"><span>Me</span></a></li>
+          <li><a href="/with-n-for"><span>With & For</span></a></li>
+          <li><a href="/blog"><span>Blog</span></a></li>
+        </ul>
+      </div>
+      <button type="button" push-nav="toggle" class="btn btn-menu"><span class="lines"></span></button>
+      <div push-nav class="page blog">
+        <div du-scroll-container class="page-inner">
+          <div class="content">
+            <div class="blog-post">
+              <h1 class="title">SilverStripe, Homestead &amp; Forge 1/3</h1>
+              <div class="single"><p>Recently I’ve had to develop a site or two using the CMS framework <a href="http://www.silverstripe.org/">SilverStripe</a>. It’s a relatively straightforward php CMS/Framework but more than that it has a <a href="http://www.silverstripe.com/blog/common-web-platform/">Common Web Platform</a> that incorporates a ton of other packages and services such as custom virtual machines and git deployment. However, these services are quite pricy and not always appropriate for the size of a project.</p>
+<p><a href="https://forge.laravel.com/">Forge</a> created by Taylor Otwell is a php deployment service aimed at taking the hassle out of DevOps for php developers. It launches instant php platforms on the likes of <a href="https://www.linode.com/">Linode</a> and <a href="https://www.digitalocean.com/?refcode=f97aaa23def8">DigitalOcean</a> and includes a Nginx, PHP5.6, Postgres, Redis, MySQL, Node, Memcached, Beanstalkd and more. It’s specifically tuned for the <a href="http://laravel.com/">Laravel</a> framework but works with pretty much any php project. One nice feature is it’s ability to allow a ‘push to deploy’ service using the likes of <a href="https://github.com/">Github</a>, <a href="https://bitbucket.org/">Bitbucket</a> and other common git service providers.</p>
+<p><a href="http://laravel.com/docs/4.2/homestead">Homestead</a> is a pre-packaged <a href="https://www.vagrantup.com/">Vagrant</a> box that allows you to setup a local development environment near identical to that which Forge will launch by default. There are many advantages to using a tool like Vagrant to provision Virtual Machines but perhaps the most obvious here is the knowledge that your local development environment will match that of your production environment.</p>
+<p>So to state the obvious, we can create a nice SilverStripe application using Homestead, Forge and Github for an elegant and relatively easy deployment pipeline.</p>
+<p>Since there is a fair bit involved in getting this all initially set-up and working I’m going to break this down into three articles that cover each component on it’s own. To follow along I’m assuming you are already familiar with tools like <a href="https://www.vagrantup.com/">Vagrant</a>, <a href="http://git-scm.com/">Git</a>, <a href="https://github.com/">Github</a>, the <a href="http://iterm2.com/">Terminal/iTerm2</a>, <a href="http://www.openvim.com/">Vim</a>, <a href="https://getcomposer.org/">Composer</a>, <a href="http://php.net/">php</a> and <a href="http://www.silverstripe.org/">SilverStripe</a>. You don’t need to be an expert in any of these but knowing what they are will be of some help. With regards to using the Vim editor I’ll add some helpful commands to ensure you can follow along.</p>
+
+              </div>
+              <div class="single">       <p><hr></p>
+<h2 id="silverstripe">SilverStripe</h2>
+<p>To get started we will begin by installing SilverStripe using the package manager <a href="https://getcomposer.org/">Composer</a>. I wont be installing the full Common Web Platform that SilverStripe offers but the same principles crossover.</p>
+<p>You can visit the <a href="http://www.silverstripe.org/software/download/">SivlerStripe downloads page</a> for specific information on framework installation. Since we’re using Composer we can open the Terminal and run the following command:</p>
+<pre><code>$ composer create-project silverstripe/installer /forge-silverstripe 3.1.8
+</code></pre><p>This will create a new SilverStripe project in a folder called ‘forge-silverstripe’. Once this has finished downloading and installing open the project in your preferred editor, mines <a href="https://www.jetbrains.com/phpstorm/">PhpStrom</a>/<a href="https://www.jetbrains.com/idea/">IntelliJ</a> for php projects. </p>
+<h3 id="configuring-silverstripe">Configuring SilverStripe</h3>
+<p>SilverStripe lets you set your database config in a few different ways. We will put the configuration in <code>_ss_environment.php</code> so open that up and add the following snippet.</p>
+<pre><code>// Set database variables
+define(&#39;SS_DATABASE_NAME&#39;, &#39;forgesilverstripe&#39;); 
+define(&#39;SS_DATABASE_SERVER&#39;, getenv(&#39;DB_SERVER&#39;)); 
+define(&#39;SS_DATABASE_USERNAME&#39;, getenv(&#39;DB_USERNAME&#39;));
+define(&#39;SS_DATABASE_PASSWORD&#39;, getenv(&#39;DB_PASSWORD&#39;));
+
+// Set development environment
+$env = getenv(&#39;APP_ENV&#39;) == &#39;local&#39; ? &#39;dev&#39; : &#39;live&#39;;
+define(&#39;SS_ENVIRONMENT_TYPE&#39;, $env);
+
+// Set file mapping for Sake CLI
+global $_FILE_TO_URL_MAPPING;
+$urlMap = &#39;http://forge-silverstripe.’;
+$urlMap .= getenv(&#39;APP_ENV&#39;) == ‘local’ ? &#39;local&#39; : &#39;nz&#39;;
+$_FILE_TO_URL_MAPPING[&#39;/home/vagrant/Sites/forge-silverstripe&#39;] = $urlMap;
+
+// Set default admin account
+if (getenv(&#39;ADMIN_USERNAME&#39;)
+    &amp;&amp; getenv(&#39;ADMIN_PASSWORD&#39;)) {
+
+    define(&#39;SS_DEFAULT_ADMIN_USERNAME&#39;, getenv(&#39;ADMIN_USERNAME&#39;));
+    define(&#39;SS_DEFAULT_ADMIN_PASSWORD&#39;, getenv(&#39;ADMIN_PASSWORD&#39;));
+}
+</code></pre><p>We’re adding a lot of important configuration in the above snippet and made extensive use of php’s environment variables to set several key options. Using environment variables this way means we can check this code into our git repo without worrying about potentially exposing sensitive configuration information such as passwords. Lets break down what we’ve configured.</p>
+<p>In the first group we set the database. In this case it’s a MySQL database and we pull in the appropriate details that we will set up later in our Nginx server config. I’ve hardcoded the database name in this instance because often you will use Homestead to host multiple applications you’ve got on the go. In this case a single environment variable name <code>DB_NAME</code> would potentially conflict with another application database. While we could create a more specific variable name I think in this case it’s ok to directly drop the in db name.</p>
+<p>In our second config block we are letting SilverStripe know about the environment that it’s running on. SilverStripe allows you to perform specific tasks while in development mode that are not accessible when in production for security purposes. So we are checking the local <code>APP_ENV</code> variable made available by Homestead and then setting it appropriately for SilverStripe.</p>
+<p>Next, we perform a bit of file mapping required for using the <a href="http://doc.silverstripe.org/framework/en/topics/commandline">sake</a> cli tool for when you’ve ssh’d into the virtual machine. The file path here should be similar to that of your local development environment. For me I have a <code>Sites</code> directory in my main user folder where I store all my development websites. Yours may differ so update <code>/home/vagrant/&lt;your-website-path&gt;</code> as appropriate.</p>
+<p>Finally and really only for the sake of demonstration I’ve added a default administrative user. It firstly checks to see if we’ve set these environment variables and then sets these parameters accordingly. I wouldn’t recommend doing this when deploying to production.</p>
+<p>We aren’t making anything special we just want to get all this working together so that will pretty much be it for setting up SilverStripe.</p>
+<h3 id="cwp-specifics">CWP Specifics</h3>
+<p>If you are using the CWP from SilverStripe there are a few additional things you’ll want to configure. When you install a CWP bundle it adds an SSL redirect for the administration section which is not very helpful when developing without one. To turn the SSL redirect off you will need to add the following config to your <code>mysite/_config/config.yml</code> file.</p>
+<pre><code>CwpControllerExtension:
+  ssl_redirection_force_domain: false
+  ssl_redirection_enabled: false
+</code></pre><p><strong><em>Please note</em></strong> <em>that this needs to be placed correctly inside any containing elements or you may get errors.</em></p>
+<h3 id="end">End</h3>
+<p>With that we now have an installed version of SilverStripe framework ready to be run via Homestead. In the <a href="/blog/silverstripe-homestead-forge-pt-2">next article</a> we’ll get Homestead installed and configured to run our SilverStripe website.</p>
+
+              </div>
+            </div>
+            <div class="blog-footer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/js/libs.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

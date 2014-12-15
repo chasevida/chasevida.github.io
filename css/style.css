@@ -423,11 +423,17 @@ code,
 kbd,
 pre,
 samp {
+  font-family: 'Bitstream Vera Sans Mono', Consolas, Courier, monospace;
   font-size: 14px;
+  font-style: normal;
 }
 code {
   padding: 6px 4px 2px 4px;
   background-color: #efefef;
+}
+pre code {
+  padding: 4px 0;
+  background-color: transparent;
 }
 input,
 textarea {
@@ -451,7 +457,6 @@ pre {
   margin-left: -10px;
   margin-right: -10px;
   padding: 20px 10px;
-  font-family: 'GFS Didot', serif;
   font-size: 14px;
   font-style: italic;
   line-height: 20px;
@@ -556,6 +561,7 @@ pre {
 }
 @media only screen and (min-width: 960px) {
   .blog-post .title {
+    width: 70%;
     margin-bottom: 50px;
   }
 }
