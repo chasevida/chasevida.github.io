@@ -97,11 +97,11 @@ php framework/cli-script.php / flush=all
 <p>We have our build script set up to correctly pull in our repository’s changes and update them on the server but this will still not launch the website correctly. To do that we need to once again update the Nginx configuration and add environment variables.</p>
 <h2 id="adding-environment-variables">Adding Environment Variables</h2>
 <p>Similar to our local set up on Homestead we need to add our environment variables so SilverStripe can connect with our database or any other important services which require confidential access keys. Again Forge makes this super simple. Select the <em>Environment</em> button from the sub navigation whilst within the <em>Sites</em> section. From here you can simply add the key value pairs as you need. For us, we will add in the same keys as our development environment but with the updated values that Forge sent to us via email. It should look something like this.</p>
-<pre><code>DB_SERVER:             yourIpAddress
-DB_USERNAME:         forge
-DB_PASSWORD:         yourSecretDbPassword
-ADMIN_USERNAME:     admin
-ADMIN_PASSWORD:     yourSecretAdminPassword
+<pre><code>DB_SERVER:       yourIpAddress
+DB_USERNAME:     forge
+DB_PASSWORD:     yourSecretDbPassword
+ADMIN_USERNAME:  admin
+ADMIN_PASSWORD:  yourSecretAdminPassword
 </code></pre><p>That’s all there is to it, nice.</p>
 <h2 id="nginx-config">Nginx Config</h2>
 <p>Before our website will display correctly we need to update our Nginx config similar to how we did with Homestead. We don’t need to ssh in to do this (you could if you wish though), instead located at the bottom right of the tab is a grey edit icon. Selecting this edit icon will show you the option where you can edit your Nginx config. Click this and a modal window will open with the familiar config contents.</p>
