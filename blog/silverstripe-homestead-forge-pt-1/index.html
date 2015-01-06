@@ -65,9 +65,8 @@ define(&#39;SS_ENVIRONMENT_TYPE&#39;, $env);
 
 // Set file mapping for Sake CLI
 global $_FILE_TO_URL_MAPPING;
-$urlMap = &#39;http://forge-silverstripe.’;
-$urlMap .= getenv(&#39;APP_ENV&#39;) == ‘local’ ? &#39;local&#39; : &#39;nz&#39;;
-$_FILE_TO_URL_MAPPING[&#39;/home/vagrant/Sites/forge-silverstripe&#39;] = $urlMap;
+$_FILE_TO_URL_MAPPING[&#39;/home/forge/default&#39;] = &#39;http://forge-silverstripe.nz&#39;;
+$_FILE_TO_URL_MAPPING[&#39;/home/vagrant/Sites/forge-silverstripe&#39;] = &#39;http://forge-silverstripe.local&#39;;
 
 // Set default admin account
 if (getenv(&#39;ADMIN_USERNAME&#39;)
@@ -79,7 +78,7 @@ if (getenv(&#39;ADMIN_USERNAME&#39;)
 </code></pre><p>We’re adding a lot of important configuration in the above snippet and made extensive use of php’s environment variables to set several key options. Using environment variables this way means we can check this code into our git repo without worrying about potentially exposing sensitive configuration information such as passwords. Lets break down what we’ve configured.</p>
 <p>In the first group we set the database. In this case it’s a MySQL database and we pull in the appropriate details that we will set up later in our Nginx server config. I’ve hardcoded the database name in this instance because often you will use Homestead to host multiple applications you’ve got on the go. In this case a single environment variable name <code>DB_NAME</code> would potentially conflict with another application database. While we could create a more specific variable name I think in this case it’s ok to directly drop the in db name.</p>
 <p>In our second config block we are letting SilverStripe know about the environment that it’s running on. SilverStripe allows you to perform specific tasks while in development mode that are not accessible when in production for security purposes. So we are checking the local <code>APP_ENV</code> variable made available by Homestead and then setting it appropriately for SilverStripe.</p>
-<p>Next, we perform a bit of file mapping required for using the <a href="http://doc.silverstripe.org/framework/en/topics/commandline">sake</a> cli tool for when you’ve ssh’d into the virtual machine. The file path here should be similar to that of your local development environment. For me I have a <code>Sites</code> directory in my main user folder where I store all my development websites. Yours may differ so update <code>/home/vagrant/&lt;your-website-path&gt;</code> as appropriate.</p>
+<p>Next, we perform a bit of file mapping required for using the <a href="http://doc.silverstripe.org/framework/en/topics/commandline">sake</a> cli tool for when you’ve ssh’d into the virtual machine. The file path here should be similar to that of your local development environment. For me I have a <code>Sites</code> directory in my main user folder where I store all my development websites. Yours may differ so update <code>/home/vagrant/&lt;your-website-path&gt;</code> as appropriate. I&#39;ve also added in a mapping specifically for Forge, but I&#39;ll cover this in a later article.</p>
 <p>Finally and really only for the sake of demonstration I’ve added a default administrative user. It firstly checks to see if we’ve set these environment variables and then sets these parameters accordingly. I wouldn’t recommend doing this when deploying to production.</p>
 <p>We aren’t making anything special we just want to get all this working together so that will pretty much be it for setting up SilverStripe.</p>
 <h3 id="cwp-specifics">CWP Specifics</h3>

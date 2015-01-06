@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html ng-app="mainApp" class="no-js">
+  <head>
+    <meta charset="utf8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="webby dev sort of blog">
+    <meta name="author" content="Mark">
+    <title>chasevida</title>
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Josefin+Sans:700|GFS+Didot&amp;subset=greek">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="shortcut icon" href="/favicon.ico?v=242738432">
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      
+      ga('create', 'UA-57712106-1', 'auto');
+      ga('send', 'pageview');
+          
+    </script>
+  </head>
+  <body>
+    <div class="u-fill u-no-overflow">
+      <div push-nav class="nav u-fill is-hidden">
+        <div push-nav="close" class="background"></div>
+        <ul class="nav-list l-vert-center">
+          <li><a href="/"><span>Home</span></a></li>
+          <li><a href="/self"><span>Me</span></a></li>
+          <li><a href="/with-n-for"><span>With & For</span></a></li>
+          <li><a href="/blog"><span>Blog</span></a></li>
+        </ul>
+      </div>
+      <button type="button" push-nav="toggle" class="btn btn-menu"><span class="lines"></span></button>
+      <div push-nav class="page blog">
+        <div du-scroll-container class="page-inner">
+          <div class="content">
+            <div class="blog-post">
+              <h1 class="title">SilverStripe, Homestead &amp; Forge 3/3</h1>
+              <div class="single"><p>This is my final article in a series on setting up a development pipeline with <a href="http://www.silverstripe.org/">SilverStripe</a>, <a href="http://laravel.com/docs/4.2/homestead">Homestead</a> and <a href="https://forge.laravel.com/">Forge</a>. If you aren’t familiar with these then best start at the <a href="/blog/silverstripe-homestead-forge-pt-1">beginning</a>.</p>
+<h2 id="forge-github-and-digitalocean">Forge, Github and DigitalOcean</h2>
+<p>When Taylor Otwell created Forge and Homestead he also created a nice succinct development pipeline for php developers (of course there are others too). As mentioned in an earlier article, Forge is like having a DevOps friend at hand to take the hassle out of provisioning a server through service providers like <a href="https://www.linode.com/">Linode</a> and <a href="https://www.digitalocean.com/?refcode=f97aaa23def8">DigitalOcean</a>.</p>
+<p>For us to get started we will need to ensure we have already set up an account with one of these providers. I’ve set mine up with DigitalOcean. All we really need to do after this is ensure we’re signed in - Forge will make an authorisation request to <a href="https://www.digitalocean.com/?refcode=f97aaa23def8">DigitalOcean</a> making it even easier for us to integrate.</p>
+<p>You will now also need to sign up for <a href="https://forge.laravel.com/">Forge</a>. It’s US$10 a month which I think is very affordable - cheers Taylor.</p>
+<p>Finally, you will need some sort of version control system. I recommend <a href="http://git-scm.com/">git</a> and to host it remotely I use <a href="https://github.com/">github.com</a>. I’m assuming you’re already good with these or something similar. So go ahead now and commit all your files to a repo and push it up to a remote. Forge will use a service hook to access this repository manually or whenever a commit is pushed depending on your preference.</p>
+<p>Ok, now we’ve got the accounting and basic setup out of the way let’s revise some important configuration we set in an earlier article.</p>
+<h2 id="silverstripe-configuration">SilverStripe Configuration</h2>
+<p>Back in my first post we went through some specific configuration requirements to get all the components playing nicely together. It’s worth going over that again here, specifically the <code>_ss_environment.php</code>.</p>
+<pre><code>&lt;?php
+
+define(&#39;SS_DATABASE_NAME&#39;, forgesilverstripe);
+define(&#39;SS_DATABASE_SERVER&#39;, getenv(&#39;DB_SERVER&#39;));
+define(&#39;SS_DATABASE_USERNAME&#39;, getenv(&#39;DB_USERNAME&#39;));
+define(&#39;SS_DATABASE_PASSWORD&#39;, getenv(&#39;DB_PASSWORD&#39;));
+
+// Set development environment
+$env = getenv(&#39;APP_ENV&#39;) == &#39;local&#39; ? &#39;dev&#39; : &#39;live&#39;;
+define(&#39;SS_ENVIRONMENT_TYPE&#39;, $env);
+
+
+// Set default admin account
+if (getenv(&#39;ADMIN_USERNAME&#39;)
+    &amp;&amp; getenv(&#39;ADMIN_PASSWORD&#39;)) {
+
+    define(&#39;SS_DEFAULT_ADMIN_USERNAME&#39;, getenv(&#39;ADMIN_USERNAME&#39;));
+    define(&#39;SS_DEFAULT_ADMIN_PASSWORD&#39;, getenv(&#39;ADMIN_PASSWORD&#39;));
+}
+
+global $_FILE_TO_URL_MAPPING;
+
+$_FILE_TO_URL_MAPPING[&#39;/home/forge/default&#39;] = &#39;http://forge-silverstripe.nz&#39;;
+$_FILE_TO_URL_MAPPING[&#39;/home/vagrant/Sites/forge-silverstripe&#39;] = &#39;http://forge-silverstripe.local&#39;;
+</code></pre><p>In this file we’ve used environment variables so we can safely push this to a repository and add them via Forge for deployment. Also worth noting is the required file to url mapping. SilverStripe allows us to add multiple definitions that default to the most relevant for the system so that we don’t need to worry about matching these. All we need to know is the path used on Forge which just so happens to be <code>/home/forge/default</code> paired with the domain we plan on using (it doesn’t need to exist for it to work).</p>
+<p>Now, this is really important, the default <code>.gitignore</code> file has the <code>_ss_environment.php</code> included and for good reason but since we’re not storing sensitive information here we can comment out this ignore rule and include it in the repository. Make sure you do this, commit the change and push it to your remote repo.</p>
+<h2 id="forge-digitalocean-droplet">Forge - DigitalOcean droplet</h2>
+<p>Now it’s time to actually get into setting up Forge to deploy our site on DigitalOcean.</p>
+<p>Log in to Forge and you will be presented with the <em>Create Server</em> form. For this demo we are simply going to change the name to <code>forge-silverstripe</code> and the database name to <code>forgesilverstripe</code> (these are now consistent with our local environment to keep it easy). Select the server size you want - I’m using the <em>2GB RAM - 2CPU  Cores</em> etc for now. You can happily leave the rest or edit it as you need. Now just hit the <em>Create Server</em> button and you’re done.</p>
+<p>This will begin provisioning a server, and under Active Servers you will see the status flick to <code>active</code> once it’s all ready for use. You should also receive an email to let you know the private access keys for the server - make sure you store that somewhere safe. Now in the same menu, next to the status, is the manage button - let’s follow that.</p>
+<p>When the server has finalised provisioning and you’ve followed the manage button you should be on the <em>Server Details</em> page with the <em>Sites</em> tab opened. At the bottom you will see the default site created. We will work with this - again click on the manage button.</p>
+<p>The next tab that opens allows us to select our type of deployment service. We are using github.com so select git from the options. Fill out the fields with your repo name and select the appropriate production branch, mine is <code>master</code>. This will create a service hook into your git repo allowing Forge to grab your source and deploy it on the server.</p>
+<p>Great, let’s hit the <em>Deploy Now</em> button, wait for it and then preview the site using the default IP address provided near the top of the page. Brilliant...you see nothing but an error page of sorts. Let’s go back and check the <em>View Latest Deployment Log</em> where you should see a list of errors. Basically we need to configure the Forge build process to work specifically with SilverStripe.</p>
+<h2 id="forge-build-script">Forge Build Script</h2>
+<p>To edit the deployment script hit the <em>Edit Deploy Script</em> button from the <em>Site Details</em> page. You will see its default set up is for a Laravel based project with its `artisan’ commands. We can simply remove any references to the artisan CLI and add the appropriate commands to build and flush SilverStripe once the codebase has been updated. Below is an example deployment script that does this for us:</p>
+<pre><code>cd /home/forge/default
+git pull origin master
+php -v
+composer install
+export DB_USERNAME=forge 
+export DB_PASSWORD=yourSecretDbPassword 
+export APP_ENV=local
+php framework/cli-script.php dev/build
+php framework/cli-script.php / flush=all
+</code></pre><p>In reviewing this script you will see that after we install the codebase from our repo we output the php version running. I like to do this so that if I have to check the deployment log I can quickly check the php version is correct before it begins installing packages and running commands. After this, it runs <code>composer install</code> to pull in your dependencies. Then we have a series of local environment variables for the build process. These are the environment variables that will become accessible in the `_ss_environment.php’ file that SilverStripe needs in order to build the database and flush the cache.</p>
+<p><em>If you are not familiar with SilverStripe it may seem strange to set the environment here as <code>local</code> or <code>dev</code> but SilverStripe needs to be in this mode in order to allow the build and flush commands to run.</em></p>
+<p>Finally, we use the SilverStripe framework CLI tool directly instead of installing <a href="http://doc.silverstripe.org/framework/en/topics/commandline">sake</a>. This is because sake will not install without <code>sudo</code> command and we will end up adding additional configuration we don’t really need to do just that, so we keep it simple and reference the file directly. These last two commands will rebuild the database and flush the cache so our changes take full effect.</p>
+<p>We have our build script set up to correctly pull in our repository’s changes and update them on the server but this will still not launch the website correctly. To do that we need to once again update the Nginx configuration and add environment variables.</p>
+<h2 id="adding-environment-variables">Adding Environment Variables</h2>
+<p>Similar to our local set up on Homestead we need to add our environment variables so SilverStripe can connect with our database or any other important services which require confidential access keys. Again Forge makes this super simple. Select the <em>Environment</em> button from the sub navigation whilst within the <em>Sites</em> section. From here you can simply add the key value pairs as you need. For us, we will add in the same keys as our development environment but with the updated values that Forge sent to us via email. It should look something like this.</p>
+<pre><code>DB_SERVER:             yourIpAddress
+DB_USERNAME:         forge
+DB_PASSWORD:         yourSecretDbPassword
+ADMIN_USERNAME:     admin
+ADMIN_PASSWORD:     yourSecretAdminPassword
+</code></pre><p>That’s all there is to it, nice.</p>
+<h2 id="nginx-config">Nginx Config</h2>
+<p>Before our website will display correctly we need to update our Nginx config similar to how we did with Homestead. We don’t need to ssh in to do this (you could if you wish though), instead located at the bottom right of the tab is a grey edit icon. Selecting this edit icon will show you the option where you can edit your Nginx config. Click this and a modal window will open with the familiar config contents.</p>
+<p>Now, we do not want to simply copy and paste the whole config we set up earlier but rather only segments of it. Because we have done this before I am going to highlight only the changed sections.</p>
+<pre>
+server {
+
+    listen 80 default_server;
+    server_name default;
+    <b>root /home/forge/default;</b>
+
+    # FORGE SSL (DO NOT REMOVE!)
+    # ssl_certificate;
+    # ssl_certificate_key;
+
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+
+    <b>index framework/main.php;</b>
+
+    charset utf-8;
+
+    location / {
+        <b>try_files $uri $uri/ /framework/main.php?$query_string;</b>
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    access_log off;
+    error_log  /var/log/nginx/default-error.log error;
+
+    <b>error_page 404 /framework/main.php;</b>
+
+    <b>location ^~ /assets/ {
+        sendfile on;
+        try_files $uri = 404;
+    }</b>
+
+    <b>location ~ /framework/.*(main|rpc|tiny_mce_gzip)\.php$ {
+        … env variables ...</b>
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass unix:/var/run/php5-fpm.sock;
+        fastcgi_index index.php;
+        include fastcgi_params;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    <b>location ~ /vendor/(.+)$ {
+        deny all;
+    }
+
+    location ~ /framework/sake$ {
+        deny all;
+    }
+
+    location ~ /(cms|framework|mysite)/(.+).(php|php3|php4|php5|phtml|inc|rb|config|json|md)$ {
+        deny all;
+    }
+
+    location ^~ /silverstripe-cache {
+        deny all;
+    }
+
+    location ~* \.(ya?ml)$ {
+        deny all;
+        return 404;
+    }
+
+    location ~* web\.config {
+        deny all;
+        return 404;
+    }
+
+    location ~* nginx\.conf {
+        deny all;
+        return 404;
+    }
+
+    location ~* composer\.(json|lock) {
+        deny all;
+        return 404;
+    }
+
+    location ~ /\. {
+        deny all;
+    }</b>
+}
+
+</pre>
+
+<p>Like I said, the configuration is very similar with only two small changes from our Homestead setup. The first is the root path. In Forge it defaults to a <code>public</code> directory which we will remove from the path since we want to use the project root. Secondly are the environment variables you set via Forge. These will be listed in plain text within the <code>location framework</code> configuration. If you add additional environment variables make sure to come back and check they have been placed correctly within this snippet.</p>
+<p>That’s it, we’re now all ready to try deploying and running our SilverStripe application on Forge and DigitialOcean. Go back to the <em>Site Details</em> page and click the <em>Deploy Now</em> button. It should take a few moments and then go green. You can view the latest deployment log to see how it was processed if there were errors. To see your web app live you can visit the IP address provided when you provisioned the server. The site should load successfully and you should be able to log in with the admin credentials you set up.</p>
+<h2 id="end">END</h2>
+<p>This is a nice and relatively simple development pipeline that you can easily share with other developers on your team to ensure everyone’s running the same setup locally as well as in production. You could enhance this further by adding in something like Travis to run automated tests before deployment; adding additional micro services run on a different language such as Node.js; or just your basic run of the mill cron jobs. I won’t cover those topics but there’s plenty more you could do to grow your setup.</p>
+
+              </div>
+            </div>
+            <div class="blog-footer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/js/libs.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>
