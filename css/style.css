@@ -790,6 +790,15 @@ pre {
     font-size: 52px;
   }
 }
+.home .sub-title {
+  display: block;
+  font-family: 'GFS Didot', serif;
+  font-style: italic;
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 14px;
+  text-transform: none;
+}
 @media only screen and (min-width: 600px) {
   .me .content {
     display: table;
@@ -814,10 +823,10 @@ pre {
   }
 }
 .me .img-profile {
-  width: 150px;
-  height: 210px;
+  width: 170px;
+  height: 170px;
   margin: 0 auto;
-  background-image: url("../img/photo/profile.png");
+  background-image: url("../img/photo/profile-02.png");
   background-size: cover;
   margin-top: 50px;
   margin-bottom: 50px;
@@ -840,7 +849,7 @@ pre {
 @media only screen and (min-width: 960px) {
   .me .img-profile {
     margin: 0 auto;
-    margin-top: -150px;
+    /*margin-top: -150px;*/
   }
 }
 @media only screen and (min-width: 768px) {
@@ -864,6 +873,19 @@ pre {
     padding: 0;
     width: 320px;
   }
+}
+.me .profile-contact {
+  margin: 0 auto;
+  margin-top: 25px;
+  width: 180px;
+}
+.me .profile-contact h4 {
+  margin: 0;
+  padding: 0;
+}
+.me .profile-contact p {
+  margin-top: 0;
+  padding-left: 10px;
 }
 .btn-menu {
   position: absolute;
